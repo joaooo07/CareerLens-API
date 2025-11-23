@@ -1,4 +1,4 @@
-using CareerLens.Application.Interfaces.AnalysisResults;
+﻿using CareerLens.Application.Interfaces.AnalysisResults;
 using CareerLens.Application.Interfaces.JobAnalyses;
 using CareerLens.Application.Interfaces.LearningResources;
 using CareerLens.Application.Interfaces.Resumes;
@@ -27,13 +27,15 @@ using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 🔥 Pegando CONN STRING do Render
+var oracleConnectionString = builder.Configuration["ORACLE_CONNECTION_STRING"];
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseOracle(builder.Configuration.GetConnectionString("Oracle"));
+    options.UseOracle(oracleConnectionString);
 });
 
-
+// Repositórios e UseCases
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserUseCase, UserUseCase>();
 
@@ -57,7 +59,7 @@ builder.Services.AddScoped<IAnalysisResultUseCase, AnalysisResultUseCase>();
 
 builder.Services.AddControllers();
 
-
+// Versionamento
 builder.Services.AddApiVersioning(opt =>
 {
     opt.DefaultApiVersion = new ApiVersion(1, 0);
@@ -67,16 +69,13 @@ builder.Services.AddApiVersioning(opt =>
 
 builder.Services.AddVersionedApiExplorer(options =>
 {
-    options.GroupNameFormat = "'v'V"; 
+    options.GroupNameFormat = "'v'V";
     options.SubstituteApiVersionInUrl = true;
 });
 
-
-builder.Services.AddEndpointsApiExplorer();
-
+// Swagger (AGORA SEM IF)
 builder.Services.AddSwaggerGen(options =>
 {
-
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
         Title = "CareerLens API v1",
@@ -90,15 +89,16 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
+// Health Check
 builder.Services.AddHealthChecks()
     .AddOracle(
-        builder.Configuration.GetConnectionString("Oracle")!,
+        oracleConnectionString,
         name: "oracle",
         failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
-        tags: new[] { "db", "oracle" });
+        tags: new[] { "db", "oracle" }
+    );
 
-
+// OpenTelemetry
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracer =>
     {
@@ -111,21 +111,17 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
-
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerLens V1");
-        options.SwaggerEndpoint("/swagger/v2/swagger.json", "CareerLens V2");
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "CareerLens V1");
+    options.SwaggerEndpoint("/swagger/v2/swagger.json", "CareerLens V2");
+});
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+// Health Checks
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
@@ -136,7 +132,6 @@ app.MapHealthChecks("/health/db", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("db"),
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
-
 
 app.MapControllers();
 
