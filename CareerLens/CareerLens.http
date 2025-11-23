@@ -1,0 +1,6 @@
+@CareerLens_HostAddress = http://localhost:5234
+
+GET {{CareerLens_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

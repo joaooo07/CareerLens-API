@@ -1,0 +1,36 @@
+# Visual Studio cache
+.vs/
+
+# Build
+bin/
+obj/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# User settings
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Node (caso exista)
+node_modules/
+
+# Secrets/env
+*.env
+appsettings.Development.json
+
+# EF cache
+Migrations/
+
+# Keep actual EF Migrations
+!CareerLens/Infrastructure/Data/Migrations/
